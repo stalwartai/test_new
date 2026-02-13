@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y \
 # Copy the current directory contents into the container at /app
 COPY . /app
 
+# Install PyTorch CPU version FIRST (to avoid downloading 2GB+ NVIDIA drivers)
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
