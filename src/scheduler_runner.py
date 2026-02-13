@@ -4,7 +4,13 @@ Used by Docker entrypoint.
 """
 import time
 import signal
+import signal
 import sys
+import os
+
+# Add project root to python path to fix "ModuleNotFoundError: No module named 'src'"
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from src.scheduler import NewsScheduler
 import logging
 
