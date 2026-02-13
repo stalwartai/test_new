@@ -10,6 +10,5 @@ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0
 cryptography==41.0.0
 sentence-transformers
 scikit-learn
-tf-keras
 streamlit
 plotly
