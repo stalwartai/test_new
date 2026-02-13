@@ -19,12 +19,19 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install Spacy model
 RUN python -m spacy download en_core_web_sm
 
-# Make port 5000 available to the world outside this container
-EXPOSE 5000
+# "Bake" the SentenceTransformer model into the image
+# This prevents downloading it at runtime
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+
+# Make port 8501 available to the world outside this container
+EXPOSE 8501
+
+# Copy the start script and make it executable
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 # Define environment variable
-ENV FLASK_APP=src/app.py
-ENV FLASK_RUN_HOST=0.0.0.0
+ENV PYTHONUNBUFFERED=1
 
-# Run app.py when the container launches
-CMD ["python", "src/app.py"]
+# Run the start script
+CMD ["./start.sh"]
