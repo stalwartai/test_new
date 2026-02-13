@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Aggregator — Modi & Patil Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="logo">📡</span>
+            <span class="brand-text">News Aggregator</span>
+        </div>
+        <div class="nav-actions">
+            <a href="/download?days={{ days }}" class="btn btn-download">⬇ Download Excel</a>
+            <span class="last-updated">Updated: {{ now.strftime('%d %b %Y, %I:%M %p') }}</span>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="total-articles">{{ stats.total_articles }}</div>
+                <div class="stat-label">Total Articles</div>
+            </div>
+            <div class="stat-card accent-blue">
+                <div class="stat-value" id="total-stories">{{ stats.total_stories }}</div>
+                <div class="stat-label">Unique Stories</div>
+            </div>
+            <div class="stat-card accent-orange">
+                <div class="stat-value" id="modi-count">{{ stats.modi_count }}</div>
+                <div class="stat-label">Modi Coverage</div>
+            </div>
+            <div class="stat-card accent-green">
+                <div class="stat-value" id="patil-count">{{ stats.patil_count }}</div>
+                <div class="stat-label">Patil Coverage</div>
+            </div>
+            <div class="stat-card accent-purple">
+                <div class="stat-value" id="channels">{{ stats.unique_channels }}</div>
+                <div class="stat-label">Channels</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+            <div class="filter-group">
+                <label>Person:</label>
+                <a href="/?days={{ days }}" class="filter-btn {% if not person_filter %}active{% endif %}">All</a>
+                <a href="/?person=Narendra Modi&days={{ days }}" class="filter-btn {% if person_filter == 'Narendra Modi' %}active{% endif %}">Modi</a>
+                <a href="/?person=CR Patil&days={{ days }}" class="filter-btn {% if person_filter == 'CR Patil' %}active{% endif %}">CR Patil</a>
+            </div>
+            <div class="filter-group">
+                <label>Period:</label>
+                <a href="/?days=1{% if person_filter %}&person={{ person_filter }}{% endif %}" class="filter-btn {% if days == 1 %}active{% endif %}">Today</a>
+                <a href="/?days=7{% if person_filter %}&person={{ person_filter }}{% endif %}" class="filter-btn {% if days == 7 %}active{% endif %}">7 Days</a>
+                <a href="/?days=30{% if person_filter %}&person={{ person_filter }}{% endif %}" class="filter-btn {% if days == 30 %}active{% endif %}">30 Days</a>
+            </div>
+        </div>
+
+        <!-- Stories Table -->
+        <div class="stories-section">
+            <h2>📰 News Stories <span class="story-count">({{ stories|length }} stories)</span></h2>
+            
+            {% if stories %}
+            <div class="stories-table-container">
+                <table class="stories-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Person</th>
+                            <th>Headline</th>
+                            <th>Category</th>
+                            <th>Sources</th>
+                            <th>Channels</th>
+                            <th>Languages</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for story in stories %}
+                        <tr class="story-row" onclick="toggleSources(this)">
+                            <td class="date-cell">{{ story.published }}</td>
+                            <td>
+                                <span class="person-badge {% if 'Modi' in story.person %}modi{% else %}patil{% endif %}">
+                                    {{ story.person }}
+                                </span>
+                            </td>
+                            <td class="headline-cell">{{ story.headline }}</td>
+                            <td><span class="category-tag">{{ story.category }}</span></td>
+                            <td class="sources-count">
+                                <span class="source-badge">{{ story.source_count }}</span>
+                            </td>
+                            <td class="channels-cell">{{ story.source_names }}</td>
+                            <td>{{ story.languages }}</td>
+                        </tr>
+                        <tr class="sources-detail" style="display:none;">
+                            <td colspan="7">
+                                <div class="sources-list">
+                                    <h4>📌 All Sources for this Story:</h4>
+                                    <div class="source-cards">
+                                        {% for src in story.sources %}
+                                        <div class="source-card">
+                                            <span class="source-name">{{ src.name }}</span>
+                                            <span class="source-lang">[{{ src.language }}]</span>
+                                            <a href="{{ src.url }}" target="_blank" class="source-link">🔗 Read</a>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <h3>No stories found</h3>
+                <p>Run the collector first: <code>python main.py</code></p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>News Aggregator — Tracking Shri Narendra Modi & CR Patil | Sources: NewsCatcher API + Google News RSS</p>
+    </footer>
+
+    <script>
+        function toggleSources(row) {
+            const detail = row.nextElementSibling;
+            if (detail && detail.classList.contains('sources-detail')) {
+                detail.style.display = detail.style.display === 'none' ? 'table-row' : 'none';
+                row.classList.toggle('expanded');
+            }
+        }
+
+        // Auto-refresh every 5 minutes
+        setInterval(() => {
+            fetch('/api/stats')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('total-articles').textContent = data.total_articles;
+                    document.getElementById('total-stories').textContent = data.total_stories;
+                    document.getElementById('modi-count').textContent = data.modi_count;
+                    document.getElementById('patil-count').textContent = data.patil_count;
+                    document.getElementById('channels').textContent = data.unique_channels;
+                });
+        }, 300000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=development
+      - NEWSCATCHER_API_KEY=${NEWSCATCHER_API_KEY}
+      - NEWSDATA_API_KEY=${NEWSDATA_API_KEY}
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
